@@ -8,6 +8,7 @@
   --text-muted: #b0b0b5;
   --accent-blue: #0071e3;
   --accent-red: #ff3b30;
+  --accent-gold: #ff9f0a;
   
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -106,7 +107,7 @@ header {
   color: var(--text-muted);
 }
 
-/* Form Panel (Simplified to just a single clean search input) */
+/* Form Panel */
 .form-card {
   margin-bottom: 2.5rem;
   position: relative;
@@ -223,6 +224,15 @@ header {
   text-overflow: ellipsis;
 }
 
+.suggestion-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Grid Layout */
 .tbr-grid {
   display: grid;
@@ -237,7 +247,7 @@ header {
   }
 }
 
-/* Quadrant Card */
+/* Quadrant Card (now clickable) */
 .quadrant {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -245,14 +255,21 @@ header {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  min-height: 320px;
+  min-height: 260px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.quadrant:hover {
+  border-color: #d2d2d7;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 @media (max-width: 640px) {
   .quadrant {
     padding: 1.25rem;
-    min-height: 240px;
+    min-height: 200px;
   }
 }
 
@@ -260,7 +277,7 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid #f5f5f7;
 }
@@ -299,12 +316,226 @@ header {
   font-size: 0.85rem;
 }
 
-/* Book Row (Bigger, cleaner cover arts and details) */
+/* Preview book row (compact, no action buttons shown) */
+.preview-book {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #f5f5f7;
+}
+
+.preview-book:last-child {
+  border-bottom: none;
+}
+
+.preview-cover {
+  width: 40px;
+  height: 58px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f5f5f7;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.preview-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-cover-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e8ed;
+}
+
+.preview-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex-grow: 1;
+}
+
+.preview-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-author {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-badges {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  margin-top: 0.2rem;
+}
+
+/* Reading indicator on preview */
+.reading-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34c759;
+  flex-shrink: 0;
+}
+
+/* Top-3 star on preview */
+.star-indicator {
+  color: var(--accent-gold);
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+/* "View all" link at the bottom of collapsed quadrant */
+.view-all-link {
+  margin-top: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--accent-blue);
+  font-weight: 500;
+  text-align: center;
+}
+
+/* ================================================
+   MODAL (Apple sheet-style)
+   ================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-sheet {
+  background: var(--bg-card);
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@media (min-width: 768px) {
+  .modal-backdrop {
+    align-items: center;
+  }
+  .modal-sheet {
+    border-radius: 16px;
+    max-height: 80vh;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.modal-close:hover {
+  background: #f5f5f7;
+  color: var(--text-primary);
+}
+
+.modal-search {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.modal-search-input {
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.modal-search-input:focus {
+  border-color: var(--border-focus);
+}
+
+.modal-body {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 0.5rem 1.5rem 1.5rem;
+}
+
+.modal-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem 0;
+  font-size: 0.9rem;
+}
+
+/* ================================================
+   BOOK CARD (used inside modal — full controls)
+   ================================================ */
 .book-card {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 1rem 0;
+  gap: 1rem;
+  padding: 0.85rem 0;
   border-bottom: 1px solid #f5f5f7;
   position: relative;
 }
@@ -314,10 +545,10 @@ header {
 }
 
 .book-cover-container {
-  width: 60px;
-  height: 88px;
+  width: 52px;
+  height: 76px;
   flex-shrink: 0;
-  border-radius: 6px;
+  border-radius: 5px;
   overflow: hidden;
   background: #f5f5f7;
   border: 1px solid rgba(0, 0, 0, 0.06);
@@ -350,42 +581,81 @@ header {
 .book-info-text {
   display: flex;
   flex-direction: column;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.book-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .book-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding-right: 1.75rem; /* Space for delete button */
 }
 
 .book-author {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 0.1rem;
+  margin-top: 0.05rem;
+}
+
+.book-description {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.15rem;
+  line-height: 1.3;
+}
+
+/* Top-3 star button */
+.star-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: color 0.12s ease, transform 0.12s ease;
+}
+
+.star-btn:hover {
+  color: var(--accent-gold);
+  transform: scale(1.15);
+}
+
+.star-btn.active {
+  color: var(--accent-gold);
 }
 
 /* Apple-style minimalist segmented action pills */
 .book-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .action-pill {
   background: transparent;
   border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 500;
-  padding: 0.25rem 0.6rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 20px;
   cursor: pointer;
   font-family: inherit;
@@ -427,7 +697,6 @@ header {
 }
 
 @media (max-width: 768px) {
-  /* Keep delete button visible on mobile touch screens */
   .btn-delete {
     opacity: 0.6;
   }
@@ -441,18 +710,18 @@ header {
 /* Book tags styling */
 .book-tags {
   display: flex;
-  gap: 0.35rem;
+  gap: 0.3rem;
   align-items: center;
-  margin-left: 0.75rem;
   flex-shrink: 0;
-  padding-right: 1.5rem; /* Leave room for delete button */
+  margin-left: auto;
+  padding-right: 1.25rem;
 }
 
 .tag-btn {
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 0.2rem 0.45rem;
+  padding: 0.2rem 0.4rem;
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
@@ -467,7 +736,6 @@ header {
   background-color: #f5f5f7;
 }
 
-/* Reading Tag (soft green when active) */
 .tag-btn.active-reading {
   color: #34c759;
   background-color: rgba(52, 199, 89, 0.08);
@@ -477,7 +745,6 @@ header {
   background-color: rgba(52, 199, 89, 0.12);
 }
 
-/* AUA Tag (soft blue when active) */
 .tag-btn span {
   font-size: 0.65rem;
   font-weight: 700;
@@ -492,3 +759,7 @@ header {
 .tag-btn.active-aua:hover {
   background-color: rgba(0, 113, 227, 0.12);
 }
+
+/* Spinner */
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.spin { animation: spin 1s linear infinite; }
