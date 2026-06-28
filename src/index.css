@@ -437,3 +437,58 @@ header {
   color: var(--accent-red);
   background-color: rgba(255, 59, 48, 0.08);
 }
+
+/* Book tags styling */
+.book-tags {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  margin-left: 0.75rem;
+  flex-shrink: 0;
+  padding-right: 1.5rem; /* Leave room for delete button */
+}
+
+.tag-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.12s ease;
+  font-family: inherit;
+}
+
+.tag-btn:hover {
+  color: var(--text-secondary);
+  background-color: #f5f5f7;
+}
+
+/* Reading Tag (soft green when active) */
+.tag-btn.active-reading {
+  color: #34c759;
+  background-color: rgba(52, 199, 89, 0.08);
+}
+
+.tag-btn.active-reading:hover {
+  background-color: rgba(52, 199, 89, 0.12);
+}
+
+/* AUA Tag (soft blue when active) */
+.tag-btn span {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tag-btn.active-aua {
+  color: #0071e3;
+  background-color: rgba(0, 113, 227, 0.08);
+}
+
+.tag-btn.active-aua:hover {
+  background-color: rgba(0, 113, 227, 0.12);
+}

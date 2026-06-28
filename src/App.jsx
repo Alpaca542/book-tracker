@@ -320,7 +320,29 @@ export default function App() {
 
                                             <div className="book-details">
                                                 <div className="book-info-text">
-                                                    <span className="book-title" title={book.title}>{book.title}</span>
+                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                        <span className="book-title" title={book.title}>{book.title}</span>
+                                                        
+                                                        <div className="book-tags">
+                                                            <button 
+                                                                className={`tag-btn ${book.reading ? "active-reading" : ""}`}
+                                                                onClick={() => toggleReading(book)}
+                                                                title={book.reading ? "Reading right now" : "Mark as Reading"}
+                                                            >
+                                                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                                                </svg>
+                                                            </button>
+                                                            <button 
+                                                                className={`tag-btn ${book.aua ? "active-aua" : ""}`}
+                                                                onClick={() => toggleAua(book)}
+                                                                title={book.aua ? "Available at AUA" : "Mark as available at AUA"}
+                                                            >
+                                                                <span>AUA</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                     <span className="book-author" title={book.author}>{book.author || "Unknown Author"}</span>
                                                 </div>
 
@@ -336,18 +358,6 @@ export default function App() {
                                                         onClick={() => toggleNarrative(book)}
                                                     >
                                                         Narrative
-                                                    </button>
-                                                    <button 
-                                                        className={`action-pill ${book.reading ? "active" : ""}`}
-                                                        onClick={() => toggleReading(book)}
-                                                    >
-                                                        Reading
-                                                    </button>
-                                                    <button 
-                                                        className={`action-pill ${book.aua ? "active" : ""}`}
-                                                        onClick={() => toggleAua(book)}
-                                                    >
-                                                        AUA
                                                     </button>
                                                 </div>
                                             </div>
