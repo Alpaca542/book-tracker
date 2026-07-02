@@ -28,6 +28,10 @@ html {
   scrollbar-gutter: stable;
 }
 
+html.scroll-locked {
+  overflow: hidden;
+}
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
