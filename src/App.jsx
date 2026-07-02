@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { initializeApp } from "firebase/app";
 import {
     getAuth,
@@ -64,12 +65,85 @@ function isStarred(book) {
     return book.starred ?? book.top3 ?? false;
 }
 
+function truncate(text, max = 160) {
+    if (!text) return "";
+    return text.length > max ? `${text.slice(0, max - 3)}...` : text;
+}
+
+function buildDescription(d) {
+    if (d.first_sentence?.length > 0) {
+        const raw = Array.isArray(d.first_sentence)
+            ? d.first_sentence[0]
+            : d.first_sentence;
+        if (typeof raw === "string" && raw.trim()) return truncate(raw.trim());
+    }
+    if (d.subject?.length > 0) {
+        const yr = d.first_publish_year ? `${d.first_publish_year} · ` : "";
+        return truncate(`${yr}${d.subject.slice(0, 3).join(", ")}`);
+    }
+    if (d.first_publish_year) return `First published ${d.first_publish_year}`;
+    return "";
+}
+
+let scrollLockCount = 0;
+let savedScrollY = 0;
+
 function useScrollLock(active) {
     useEffect(() => {
         if (!active) return;
-        document.documentElement.classList.add("scroll-locked");
-        return () => document.documentElement.classList.remove("scroll-locked");
+
+        scrollLockCount += 1;
+        if (scrollLockCount === 1) {
+            savedScrollY = window.scrollY;
+            document.body.style.position = "fixed";
+            document.body.style.top = `-${savedScrollY}px`;
+            document.body.style.left = "0";
+            document.body.style.right = "0";
+            document.body.style.width = "100%";
+        }
+
+        return () => {
+            scrollLockCount -= 1;
+            if (scrollLockCount === 0) {
+                document.body.style.position = "";
+                document.body.style.top = "";
+                document.body.style.left = "";
+                document.body.style.right = "";
+                document.body.style.width = "";
+                window.scrollTo(0, savedScrollY);
+            }
+        };
     }, [active]);
+}
+
+function useModalAnimation(onClosed) {
+    const [open, setOpen] = useState(false);
+    const [closing, setClosing] = useState(false);
+    const onClosedRef = useRef(onClosed);
+    const closingRef = useRef(false);
+    onClosedRef.current = onClosed;
+
+    useEffect(() => {
+        const id = requestAnimationFrame(() => setOpen(true));
+        return () => cancelAnimationFrame(id);
+    }, []);
+
+    const requestClose = useCallback(() => {
+        if (closingRef.current) return;
+        closingRef.current = true;
+        setClosing(true);
+        setOpen(false);
+        window.setTimeout(() => {
+            closingRef.current = false;
+            onClosedRef.current();
+        }, 240);
+    }, []);
+
+    return { open, closing, requestClose };
+}
+
+function ModalPortal({ children }) {
+    return createPortal(children, document.body);
 }
 
 function bookUrl(book) {
@@ -197,11 +271,32 @@ function SpinnerIcon() {
     );
 }
 
+function AvailableIcon() {
+    return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 12l2 2 4-4" />
+            <circle cx="12" cy="12" r="9" />
+        </svg>
+    );
+}
+
+function NarrativeIcon() {
+    return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            <line x1="8" y1="6" x2="16" y2="6" />
+            <line x1="8" y1="10" x2="14" y2="10" />
+        </svg>
+    );
+}
+
 // ── Auth gate ────────────────────────────────────────────────
 function AuthGate({ onClose, onSuccess }) {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const { open, closing, requestClose } = useModalAnimation(onClose);
 
     useScrollLock(true);
 
@@ -219,31 +314,36 @@ function AuthGate({ onClose, onSuccess }) {
     }
 
     return (
-        <div className="auth-backdrop" onClick={onClose}>
-            <form
-                className="auth-sheet"
-                onClick={(e) => e.stopPropagation()}
-                onSubmit={handleSubmit}
+        <ModalPortal>
+            <div
+                className={`overlay-backdrop auth-backdrop ${open ? "is-open" : ""} ${closing ? "is-closing" : ""}`}
+                onClick={requestClose}
             >
-                <p className="auth-label">Enter password to edit</p>
-                <input
-                    className="auth-input"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoFocus
-                    placeholder="Password"
-                />
-                {error && <p className="auth-error">{error}</p>}
-                <button
-                    className="auth-submit"
-                    type="submit"
-                    disabled={loading || !password}
+                <form
+                    className="auth-sheet overlay-panel"
+                    onClick={(e) => e.stopPropagation()}
+                    onSubmit={handleSubmit}
                 >
-                    {loading ? "…" : "Unlock"}
-                </button>
-            </form>
-        </div>
+                    <p className="auth-label">Enter password to edit</p>
+                    <input
+                        className="auth-input"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoFocus
+                        placeholder="Password"
+                    />
+                    {error && <p className="auth-error">{error}</p>}
+                    <button
+                        className="auth-submit"
+                        type="submit"
+                        disabled={loading || !password}
+                    >
+                        {loading ? "…" : "Unlock"}
+                    </button>
+                </form>
+            </div>
+        </ModalPortal>
     );
 }
 
@@ -353,14 +453,12 @@ function BookCard({
                     <span className="book-author" title={book.author}>
                         {book.author || "Unknown Author"}
                     </span>
-                    {book.description && (
-                        <span
-                            className="book-description"
-                            title={book.description}
-                        >
-                            {book.description}
-                        </span>
-                    )}
+                    <span
+                        className={`book-description ${book.description ? "" : "is-empty"}`}
+                        title={book.description || undefined}
+                    >
+                        {book.description || "No description available"}
+                    </span>
                 </div>
 
                 <div className="book-actions">
@@ -450,7 +548,7 @@ function QuadrantModal({
     col,
     books,
     canEdit,
-    onClose,
+    onClosed,
     onRequestAuth,
     toggleAvailable,
     toggleNarrative,
@@ -464,18 +562,19 @@ function QuadrantModal({
     const [search, setSearch] = useState("");
     const backdropRef = useRef(null);
     const starredCount = books.filter(isStarred).length;
+    const { open, closing, requestClose } = useModalAnimation(onClosed);
 
     function handleBackdropClick(e) {
-        if (e.target === backdropRef.current) onClose();
+        if (e.target === backdropRef.current) requestClose();
     }
 
     useEffect(() => {
         function handleKey(e) {
-            if (e.key === "Escape") onClose();
+            if (e.key === "Escape") requestClose();
         }
         document.addEventListener("keydown", handleKey);
         return () => document.removeEventListener("keydown", handleKey);
-    }, [onClose]);
+    }, [requestClose]);
 
     useScrollLock(true);
 
@@ -499,64 +598,66 @@ function QuadrantModal({
     }
 
     return (
-        <div
-            className="modal-backdrop"
-            ref={backdropRef}
-            onClick={handleBackdropClick}
-        >
-            <div className="modal-sheet">
-                <div className="modal-header">
-                    <span className="modal-title">
-                        {col.title} ({books.length})
-                    </span>
-                    <div className="modal-header-actions">
-                        {starredCount > 0 && (
-                            <button
-                                className="unstar-all-btn"
-                                onClick={guard(unstarAll)}
-                            >
-                                Unstar all
+        <ModalPortal>
+            <div
+                className={`overlay-backdrop modal-backdrop ${open ? "is-open" : ""} ${closing ? "is-closing" : ""}`}
+                ref={backdropRef}
+                onClick={handleBackdropClick}
+            >
+                <div className="modal-sheet overlay-panel">
+                    <div className="modal-header">
+                        <span className="modal-title">
+                            {col.title} ({books.length})
+                        </span>
+                        <div className="modal-header-actions">
+                            {starredCount > 0 && (
+                                <button
+                                    className="unstar-all-btn"
+                                    onClick={guard(unstarAll)}
+                                >
+                                    Unstar all
+                                </button>
+                            )}
+                            <button className="modal-close" onClick={requestClose}>
+                                <CloseIcon />
                             </button>
+                        </div>
+                    </div>
+                    <div className="modal-search">
+                        <input
+                            className="modal-search-input"
+                            placeholder="Filter books..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+                    <div className="modal-body">
+                        {filtered.length === 0 ? (
+                            <div className="modal-empty">
+                                {search
+                                    ? "No matches"
+                                    : "No books in this quadrant"}
+                            </div>
+                        ) : (
+                            filtered.map((book) => (
+                                <BookCard
+                                    key={book.id}
+                                    book={book}
+                                    canEdit={canEdit}
+                                    toggleAvailable={guard(toggleAvailable)}
+                                    toggleNarrative={guard(toggleNarrative)}
+                                    toggleReading={guard(toggleReading)}
+                                    toggleAua={guard(toggleAua)}
+                                    toggleStarred={guard(toggleStarred)}
+                                    toggleBookstore={guard(toggleBookstore)}
+                                    deleteBook={guard(deleteBook)}
+                                />
+                            ))
                         )}
-                        <button className="modal-close" onClick={onClose}>
-                            <CloseIcon />
-                        </button>
                     </div>
                 </div>
-                <div className="modal-search">
-                    <input
-                        className="modal-search-input"
-                        placeholder="Filter books..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
-                <div className="modal-body">
-                    {filtered.length === 0 ? (
-                        <div className="modal-empty">
-                            {search
-                                ? "No matches"
-                                : "No books in this quadrant"}
-                        </div>
-                    ) : (
-                        filtered.map((book) => (
-                            <BookCard
-                                key={book.id}
-                                book={book}
-                                canEdit={canEdit}
-                                toggleAvailable={guard(toggleAvailable)}
-                                toggleNarrative={guard(toggleNarrative)}
-                                toggleReading={guard(toggleReading)}
-                                toggleAua={guard(toggleAua)}
-                                toggleStarred={guard(toggleStarred)}
-                                toggleBookstore={guard(toggleBookstore)}
-                                deleteBook={guard(deleteBook)}
-                            />
-                        ))
-                    )}
-                </div>
             </div>
-        </div>
+        </ModalPortal>
     );
 }
 
@@ -570,6 +671,9 @@ export default function App() {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     const [openQuadrant, setOpenQuadrant] = useState(null);
+    const [addAvailable, setAddAvailable] = useState(true);
+    const [addNarrative, setAddNarrative] = useState(true);
+    const [addAua, setAddAua] = useState(false);
 
     const dropdownRef = useRef(null);
     const canEdit = !!user;
@@ -613,7 +717,7 @@ export default function App() {
                 const params = new URLSearchParams({
                     q: query,
                     limit: "5",
-                    fields: "title,author_name,cover_i,key",
+                    fields: "title,author_name,cover_i,key,first_sentence,first_publish_year,subject",
                 });
                 const res = await fetch(
                     `https://openlibrary.org/search.json?${params}`,
@@ -628,7 +732,7 @@ export default function App() {
                     coverUrl: d.cover_i
                         ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg`
                         : "",
-                    description: "",
+                    description: buildDescription(d),
                     openLibraryUrl: d.key
                         ? `https://openlibrary.org${d.key}`
                         : "",
@@ -641,7 +745,7 @@ export default function App() {
             } finally {
                 if (!controller.signal.aborted) setIsSearching(false);
             }
-        }, 20);
+        }, 200);
 
         return () => {
             clearTimeout(timer);
@@ -651,21 +755,13 @@ export default function App() {
 
     const requestAuth = useCallback(() => setShowAuth(true), []);
 
-    async function handleSelectSuggestion(s) {
-        if (!canEdit) {
-            requestAuth();
-            return;
-        }
+    async function addBook(bookData) {
         await addDoc(collection(db, "books"), {
-            title: s.title,
-            author: s.author,
-            coverUrl: s.coverUrl,
-            description: s.description || "",
-            openLibraryUrl: s.openLibraryUrl || "",
-            available: true,
-            narrative: true,
+            ...bookData,
+            available: addAvailable,
+            narrative: addNarrative,
             reading: false,
-            aua: false,
+            aua: addAua,
             starred: false,
             inBookstore: false,
             bookstorePrice: null,
@@ -676,30 +772,33 @@ export default function App() {
         setShowSuggestions(false);
     }
 
+    async function handleSelectSuggestion(s) {
+        if (!canEdit) {
+            requestAuth();
+            return;
+        }
+        await addBook({
+            title: s.title,
+            author: s.author,
+            coverUrl: s.coverUrl,
+            description: s.description || "",
+            openLibraryUrl: s.openLibraryUrl || "",
+        });
+    }
+
     async function handleKeyDown(e) {
         if (e.key === "Enter" && title.trim()) {
             if (!canEdit) {
                 requestAuth();
                 return;
             }
-            await addDoc(collection(db, "books"), {
+            await addBook({
                 title: title.trim(),
                 author: "Unknown Author",
                 coverUrl: "",
                 description: "",
                 openLibraryUrl: "",
-                available: true,
-                narrative: true,
-                reading: false,
-                aua: false,
-                starred: false,
-                inBookstore: false,
-                bookstorePrice: null,
-                createdAt: new Date().toISOString(),
             });
-            setTitle("");
-            setSuggestions([]);
-            setShowSuggestions(false);
         }
     }
 
@@ -815,63 +914,93 @@ export default function App() {
             </header>
 
             <div className="form-card">
-                <div className="input-wrapper" ref={dropdownRef}>
-                    <input
-                        className="form-input"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={
-                            canEdit
-                                ? "Search for a book to add, or type and press Enter..."
-                                : "Unlock to add books..."
-                        }
-                        onFocus={() => {
-                            if (!canEdit) requestAuth();
-                            else if (suggestions.length > 0)
-                                setShowSuggestions(true);
-                        }}
-                        readOnly={!canEdit}
-                    />
-                    {isSearching && (
-                        <div className="input-spinner">
-                            <SpinnerIcon />
-                        </div>
-                    )}
-                    {showSuggestions && suggestions.length > 0 && (
-                        <div className="suggestions-dropdown">
-                            {suggestions.map((s, idx) => (
-                                <div
-                                    key={idx}
-                                    className="suggestion-item"
-                                    onClick={() => handleSelectSuggestion(s)}
-                                >
-                                    {s.coverUrl ? (
-                                        <img
-                                            className="suggestion-cover"
-                                            src={s.coverUrl}
-                                            alt={s.title}
-                                        />
-                                    ) : (
-                                        <div className="suggestion-cover-placeholder">
-                                            <BookIcon size={12} opacity={0.5} />
-                                        </div>
-                                    )}
-                                    <div className="suggestion-info">
-                                        <span className="suggestion-title">
-                                            {s.title}
-                                        </span>
-                                        <span className="suggestion-author">
-                                            {s.author}
-                                        </span>
-                                        {s.description && (
-                                            <span className="suggestion-desc">
-                                                {s.description}
-                                            </span>
+                <div className="form-row">
+                    <div className="input-wrapper" ref={dropdownRef}>
+                        <input
+                            className="form-input"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder={
+                                canEdit
+                                    ? "Search for a book to add, or type and press Enter..."
+                                    : "Unlock to add books..."
+                            }
+                            onFocus={() => {
+                                if (!canEdit) requestAuth();
+                                else if (suggestions.length > 0)
+                                    setShowSuggestions(true);
+                            }}
+                            readOnly={!canEdit}
+                        />
+                        {isSearching && (
+                            <div className="input-spinner">
+                                <SpinnerIcon />
+                            </div>
+                        )}
+                        {showSuggestions && suggestions.length > 0 && (
+                            <div className="suggestions-dropdown">
+                                {suggestions.map((s, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="suggestion-item"
+                                        onClick={() => handleSelectSuggestion(s)}
+                                    >
+                                        {s.coverUrl ? (
+                                            <img
+                                                className="suggestion-cover"
+                                                src={s.coverUrl}
+                                                alt={s.title}
+                                            />
+                                        ) : (
+                                            <div className="suggestion-cover-placeholder">
+                                                <BookIcon size={12} opacity={0.5} />
+                                            </div>
                                         )}
+                                        <div className="suggestion-info">
+                                            <span className="suggestion-title">
+                                                {s.title}
+                                            </span>
+                                            <span className="suggestion-author">
+                                                {s.author}
+                                            </span>
+                                            {s.description && (
+                                                <span className="suggestion-desc">
+                                                    {s.description}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    {canEdit && (
+                        <div className="add-toggles">
+                            <button
+                                type="button"
+                                className={`add-toggle ${addAvailable ? "active-available" : ""}`}
+                                onClick={() => setAddAvailable((v) => !v)}
+                                title={addAvailable ? "Available" : "Unavailable"}
+                            >
+                                <AvailableIcon />
+                            </button>
+                            <button
+                                type="button"
+                                className={`add-toggle ${addNarrative ? "active-narrative" : ""}`}
+                                onClick={() => setAddNarrative((v) => !v)}
+                                title={addNarrative ? "Narrative" : "Non-narrative"}
+                            >
+                                <NarrativeIcon />
+                            </button>
+                            <button
+                                type="button"
+                                className={`add-toggle ${addAua ? "active-aua" : ""}`}
+                                onClick={() => setAddAua((v) => !v)}
+                                title="AUA library"
+                            >
+                                <span>AUA</span>
+                            </button>
                         </div>
                     )}
                 </div>
@@ -937,7 +1066,7 @@ export default function App() {
                             b.narrative === openQuadrant.narrative,
                     )}
                     canEdit={canEdit}
-                    onClose={() => setOpenQuadrant(null)}
+                    onClosed={() => setOpenQuadrant(null)}
                     onRequestAuth={requestAuth}
                     toggleAvailable={toggleAvailable}
                     toggleNarrative={toggleNarrative}
