@@ -88,33 +88,33 @@ function buildDescription(d) {
 let scrollLockCount = 0;
 let savedScrollY = 0;
 
-function useScrollLock(active) {
-    useEffect(() => {
-        if (!active) return;
+// function useScrollLock(active) {
+//     useEffect(() => {
+//         if (!active) return;
 
-        scrollLockCount += 1;
-        if (scrollLockCount === 1) {
-            savedScrollY = window.scrollY;
-            document.body.style.position = "fixed";
-            document.body.style.top = `-${savedScrollY}px`;
-            document.body.style.left = "0";
-            document.body.style.right = "0";
-            document.body.style.width = "100%";
-        }
+//         scrollLockCount += 1;
+//         if (scrollLockCount === 1) {
+//             savedScrollY = window.scrollY;
+//             document.body.style.position = "fixed";
+//             document.body.style.top = `-${savedScrollY}px`;
+//             document.body.style.left = "0";
+//             document.body.style.right = "0";
+//             document.body.style.width = "100%";
+//         }
 
-        return () => {
-            scrollLockCount -= 1;
-            if (scrollLockCount === 0) {
-                document.body.style.position = "";
-                document.body.style.top = "";
-                document.body.style.left = "";
-                document.body.style.right = "";
-                document.body.style.width = "";
-                window.scrollTo(0, savedScrollY);
-            }
-        };
-    }, [active]);
-}
+//         return () => {
+//             scrollLockCount -= 1;
+//             if (scrollLockCount === 0) {
+//                 document.body.style.position = "";
+//                 document.body.style.top = "";
+//                 document.body.style.left = "";
+//                 document.body.style.right = "";
+//                 document.body.style.width = "";
+//                 window.scrollTo(0, savedScrollY);
+//             }
+//         };
+//     }, [active]);
+// }
 
 function useModalAnimation(onClosed) {
     const [open, setOpen] = useState(false);
@@ -273,7 +273,16 @@ function SpinnerIcon() {
 
 function AvailableIcon() {
     return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
             <path d="M9 12l2 2 4-4" />
             <circle cx="12" cy="12" r="9" />
         </svg>
@@ -282,7 +291,16 @@ function AvailableIcon() {
 
 function NarrativeIcon() {
     return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
             <line x1="8" y1="6" x2="16" y2="6" />
@@ -298,7 +316,7 @@ function AuthGate({ onClose, onSuccess }) {
     const [loading, setLoading] = useState(false);
     const { open, closing, requestClose } = useModalAnimation(onClose);
 
-    useScrollLock(true);
+    // useScrollLock(true);
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -576,7 +594,7 @@ function QuadrantModal({
         return () => document.removeEventListener("keydown", handleKey);
     }, [requestClose]);
 
-    useScrollLock(true);
+    // useScrollLock(true);
 
     const filtered = books.filter((b) => {
         if (!search.trim()) return true;
@@ -618,7 +636,10 @@ function QuadrantModal({
                                     Unstar all
                                 </button>
                             )}
-                            <button className="modal-close" onClick={requestClose}>
+                            <button
+                                className="modal-close"
+                                onClick={requestClose}
+                            >
                                 <CloseIcon />
                             </button>
                         </div>
@@ -944,7 +965,9 @@ export default function App() {
                                     <div
                                         key={idx}
                                         className="suggestion-item"
-                                        onClick={() => handleSelectSuggestion(s)}
+                                        onClick={() =>
+                                            handleSelectSuggestion(s)
+                                        }
                                     >
                                         {s.coverUrl ? (
                                             <img
@@ -954,7 +977,10 @@ export default function App() {
                                             />
                                         ) : (
                                             <div className="suggestion-cover-placeholder">
-                                                <BookIcon size={12} opacity={0.5} />
+                                                <BookIcon
+                                                    size={12}
+                                                    opacity={0.5}
+                                                />
                                             </div>
                                         )}
                                         <div className="suggestion-info">
@@ -981,7 +1007,9 @@ export default function App() {
                                 type="button"
                                 className={`add-toggle ${addAvailable ? "active-available" : ""}`}
                                 onClick={() => setAddAvailable((v) => !v)}
-                                title={addAvailable ? "Available" : "Unavailable"}
+                                title={
+                                    addAvailable ? "Available" : "Unavailable"
+                                }
                             >
                                 <AvailableIcon />
                             </button>
@@ -989,7 +1017,9 @@ export default function App() {
                                 type="button"
                                 className={`add-toggle ${addNarrative ? "active-narrative" : ""}`}
                                 onClick={() => setAddNarrative((v) => !v)}
-                                title={addNarrative ? "Narrative" : "Non-narrative"}
+                                title={
+                                    addNarrative ? "Narrative" : "Non-narrative"
+                                }
                             >
                                 <NarrativeIcon />
                             </button>
