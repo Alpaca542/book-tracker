@@ -86,7 +86,6 @@ function buildDescription(d) {
 }
 
 let scrollLockCount = 0;
-let savedScrollY = 0;
 
 function useScrollLock(active) {
     useEffect(() => {
@@ -94,19 +93,13 @@ function useScrollLock(active) {
 
         scrollLockCount += 1;
         if (scrollLockCount === 1) {
-            savedScrollY = window.scrollY;
-            document.body.style.position = "fixed";
-            document.body.style.top = `-${savedScrollY}px`;
-            document.body.style.left = "0";
-            document.body.style.right = "0";
-            document.body.style.width = "100%";
+            document.documentElement.classList.add("scroll-locked");
         }
 
         return () => {
             scrollLockCount -= 1;
             if (scrollLockCount === 0) {
-                document.body.style.position = "";
-                window.scrollTo(0, savedScrollY);
+                document.documentElement.classList.remove("scroll-locked");
             }
         };
     }, [active]);
@@ -694,6 +687,14 @@ export default function App() {
 
     const dropdownRef = useRef(null);
     const canEdit = !!user;
+
+    useEffect(() => {
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        document.body.style.width = "";
+    }, []);
 
     useEffect(() => {
         return onAuthStateChanged(auth, setUser);
