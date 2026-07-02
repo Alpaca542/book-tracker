@@ -88,33 +88,29 @@ function buildDescription(d) {
 let scrollLockCount = 0;
 let savedScrollY = 0;
 
-// function useScrollLock(active) {
-//     useEffect(() => {
-//         if (!active) return;
+function useScrollLock(active) {
+    useEffect(() => {
+        if (!active) return;
 
-//         scrollLockCount += 1;
-//         if (scrollLockCount === 1) {
-//             savedScrollY = window.scrollY;
-//             document.body.style.position = "fixed";
-//             document.body.style.top = `-${savedScrollY}px`;
-//             document.body.style.left = "0";
-//             document.body.style.right = "0";
-//             document.body.style.width = "100%";
-//         }
+        scrollLockCount += 1;
+        if (scrollLockCount === 1) {
+            savedScrollY = window.scrollY;
+            document.body.style.position = "fixed";
+            document.body.style.top = `-${savedScrollY}px`;
+            document.body.style.left = "0";
+            document.body.style.right = "0";
+            document.body.style.width = "100%";
+        }
 
-//         return () => {
-//             scrollLockCount -= 1;
-//             if (scrollLockCount === 0) {
-//                 document.body.style.position = "";
-//                 document.body.style.top = "";
-//                 document.body.style.left = "";
-//                 document.body.style.right = "";
-//                 document.body.style.width = "";
-//                 window.scrollTo(0, savedScrollY);
-//             }
-//         };
-//     }, [active]);
-// }
+        return () => {
+            scrollLockCount -= 1;
+            if (scrollLockCount === 0) {
+                document.body.style.position = "";
+                window.scrollTo(0, savedScrollY);
+            }
+        };
+    }, [active]);
+}
 
 function useModalAnimation(onClosed) {
     const [open, setOpen] = useState(false);
@@ -316,7 +312,7 @@ function AuthGate({ onClose, onSuccess }) {
     const [loading, setLoading] = useState(false);
     const { open, closing, requestClose } = useModalAnimation(onClose);
 
-    // useScrollLock(true);
+    useScrollLock(true);
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -594,7 +590,7 @@ function QuadrantModal({
         return () => document.removeEventListener("keydown", handleKey);
     }, [requestClose]);
 
-    // useScrollLock(true);
+    useScrollLock(true);
 
     const filtered = books.filter((b) => {
         if (!search.trim()) return true;
