@@ -37,7 +37,7 @@ def build_url(title: str) -> str:
     query = urllib.parse.quote(title)
     return (
         f"https://aualibrary.on.worldcat.org/search"
-        f'?queryString="{query}"'
+        f'?queryString=ti:("{query}")'
         f"&databaseList="
         f"&clusterResults=true"
         f"&groupVariantRecords=false"

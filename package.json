@@ -5,7 +5,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "batch-add": "node scripts/batch-add.mjs"
   },
   "dependencies": {
     "firebase": "^11.10.0",
