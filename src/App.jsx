@@ -436,7 +436,7 @@ function PreviewBook({ book }) {
                     )}
                     {book.inBookstore && book.bookstorePrice != null && (
                         <span className="shop-indicator">
-                            ${book.bookstorePrice}
+                            ֏{book.bookstorePrice}
                         </span>
                     )}
                 </div>
