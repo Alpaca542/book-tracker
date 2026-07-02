@@ -344,7 +344,7 @@ function BookCard({
                                 <span>
                                     {book.inBookstore &&
                                     book.bookstorePrice != null
-                                        ? `$${book.bookstorePrice}`
+                                        ? `֏${book.bookstorePrice}`
                                         : "Shop"}
                                 </span>
                             </button>
