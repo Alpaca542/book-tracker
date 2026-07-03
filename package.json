@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "batch-add": "node scripts/batch-add.mjs"
+    "batch-add": "node scripts/batch-add.mjs",
+    "enrich-descriptions": "node scripts/enrich-descriptions.mjs"
   },
   "dependencies": {
     "firebase": "^11.10.0",

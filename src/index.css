@@ -384,12 +384,13 @@ header {
   min-height: 260px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .quadrant:hover {
   border-color: #d2d2d7;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
 }
 
 @media (max-width: 640px) {
@@ -449,6 +450,13 @@ header {
   gap: 0.85rem;
   padding: 0.6rem 0;
   border-bottom: 1px solid #f5f5f7;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 180ms ease;
+}
+
+.preview-book:hover {
+  transform: translateX(2px);
+  background: rgba(0, 113, 227, 0.03);
+  border-radius: 8px;
 }
 
 .preview-book:last-child {
@@ -538,7 +546,6 @@ header {
 .shop-indicator {
   font-size: 0.65rem;
   font-weight: 600;
-  color: #bf5af2;
   flex-shrink: 0;
 }
 
@@ -746,6 +753,12 @@ header {
   padding: 1rem 0;
   border-bottom: 1px solid #f5f5f7;
   position: relative;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 180ms ease;
+}
+
+.book-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
 }
 
 .book-card:last-child {
@@ -851,7 +864,7 @@ header {
   justify-content: center;
   color: var(--text-muted);
   flex-shrink: 0;
-  transition: color 0.12s ease, transform 0.12s ease;
+  transition: color 180ms ease, transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .star-btn:hover {
@@ -861,6 +874,18 @@ header {
 
 .star-btn.active {
   color: var(--accent-gold);
+}
+
+.star-btn.superstar-active {
+  color: var(--accent-blue);
+  transform: scale(1.16);
+}
+
+.superstar-indicator {
+  color: var(--accent-blue);
+  font-size: 0.84rem;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 /* Apple-style minimalist segmented action pills */
@@ -983,12 +1008,12 @@ header {
 }
 
 .tag-btn.active-shop {
-  color: #bf5af2;
-  background-color: rgba(191, 90, 242, 0.08);
+  color: var(--text-primary);
+  background-color: rgba(0, 0, 0, 0.03);
 }
 
 .tag-btn.active-shop:hover {
-  background-color: rgba(191, 90, 242, 0.12);
+  background-color: rgba(0, 0, 0, 0.06);
 }
 
 .tag-btn:disabled,

@@ -62,12 +62,48 @@ const cols = [
 ];
 
 function isStarred(book) {
-    return book.starred ?? book.top3 ?? false;
+    return Boolean(book.starred ?? book.top3 ?? book.superstar ?? false);
+}
+
+function isSuperstarred(book) {
+    return Boolean(book.superstar ?? false);
 }
 
 function truncate(text, max = 160) {
     if (!text) return "";
     return text.length > max ? `${text.slice(0, max - 3)}...` : text;
+}
+
+function getBookstoreAccent(book) {
+    switch ((book.bookstore || "").toLowerCase()) {
+        case "blue":
+            return "#0071e3";
+        case "orange":
+            return "#ff9500";
+        case "brown":
+            return "#a65f2f";
+        default:
+            return "#bf5af2";
+    }
+}
+
+function normalizeBookstore(value) {
+    const normalized = (value || "").toString().trim().toLowerCase();
+    if (["blue", "orange", "brown"].includes(normalized)) {
+        return normalized;
+    }
+    return "";
+}
+
+function sortBooksForDisplay(a, b) {
+    if (a.reading !== b.reading) return a.reading ? -1 : 1;
+    if (isSuperstarred(a) !== isSuperstarred(b)) {
+        return isSuperstarred(a) ? -1 : 1;
+    }
+    if (isStarred(a) !== isStarred(b)) {
+        return isStarred(a) ? -1 : 1;
+    }
+    return (a.title || "").localeCompare(b.title || "");
 }
 
 function buildDescription(d) {
@@ -159,11 +195,11 @@ function BookIcon({ size = 14, opacity = 0.3 }) {
     );
 }
 
-function StarIcon({ filled }) {
+function StarIcon({ filled, size = 12 }) {
     return filled ? (
         <svg
-            width="12"
-            height="12"
+            width={size}
+            height={size}
             viewBox="0 0 24 24"
             fill="currentColor"
             stroke="currentColor"
@@ -173,8 +209,8 @@ function StarIcon({ filled }) {
         </svg>
     ) : (
         <svg
-            width="12"
-            height="12"
+            width={size}
+            height={size}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -367,6 +403,8 @@ function BookCard({
     deleteBook,
 }) {
     const starred = isStarred(book);
+    const superstarred = isSuperstarred(book);
+    const bookstoreAccent = getBookstoreAccent(book);
 
     function handleCoverClick(e) {
         e.stopPropagation();
@@ -397,15 +435,24 @@ function BookCard({
                 <div className="book-info-text">
                     <div className="book-title-row">
                         <button
-                            className={`star-btn ${starred ? "active" : ""}`}
+                            className={`star-btn ${starred ? "active" : ""} ${superstarred ? "superstar-active" : ""}`}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (canEdit) toggleStarred(book);
                             }}
                             disabled={!canEdit}
-                            title={starred ? "Unstar" : "Star"}
+                            title={
+                                superstarred
+                                    ? "Remove star"
+                                    : starred
+                                      ? "Make superstar"
+                                      : "Star"
+                            }
                         >
-                            <StarIcon filled={starred} />
+                            <StarIcon
+                                filled={starred || superstarred}
+                                size={superstarred ? 16 : 12}
+                            />
                         </button>
                         <span className="book-title" title={book.title}>
                             {book.title}
@@ -446,6 +493,11 @@ function BookCard({
                                     book.inBookstore
                                         ? "In bookstore"
                                         : "Mark in bookstore"
+                                }
+                                style={
+                                    book.inBookstore
+                                        ? { color: bookstoreAccent }
+                                        : undefined
                                 }
                             >
                                 <span>
@@ -510,6 +562,8 @@ function BookCard({
 
 // ── Preview row ──────────────────────────────────────────────
 function PreviewBook({ book }) {
+    const bookstoreAccent = getBookstoreAccent(book);
+
     return (
         <div className="preview-book">
             <a
@@ -533,14 +587,22 @@ function PreviewBook({ book }) {
                     {book.author || "Unknown Author"}
                 </span>
                 <div className="preview-badges">
-                    {isStarred(book) && (
+                    {isSuperstarred(book) && (
+                        <span className="superstar-indicator" title="Superstar">
+                            ★
+                        </span>
+                    )}
+                    {!isSuperstarred(book) && isStarred(book) && (
                         <span className="star-indicator">★</span>
                     )}
                     {book.reading && (
                         <span className="reading-dot" title="Reading" />
                     )}
                     {book.inBookstore && book.bookstorePrice != null && (
-                        <span className="shop-indicator">
+                        <span
+                            className="shop-indicator"
+                            style={{ color: bookstoreAccent }}
+                        >
                             ֏{book.bookstorePrice}
                         </span>
                     )}
@@ -585,14 +647,16 @@ function QuadrantModal({
 
     useScrollLock(true);
 
-    const filtered = books.filter((b) => {
-        if (!search.trim()) return true;
-        const q = search.toLowerCase();
-        return (
-            (b.title || "").toLowerCase().includes(q) ||
-            (b.author || "").toLowerCase().includes(q)
-        );
-    });
+    const filtered = books
+        .filter((b) => {
+            if (!search.trim()) return true;
+            const q = search.toLowerCase();
+            return (
+                (b.title || "").toLowerCase().includes(q) ||
+                (b.author || "").toLowerCase().includes(q)
+            );
+        })
+        .sort(sortBooksForDisplay);
 
     function guard(fn) {
         return (...args) => {
@@ -781,8 +845,10 @@ export default function App() {
             reading: false,
             aua: addAua,
             starred: false,
+            superstar: false,
             inBookstore: false,
             bookstorePrice: null,
+            bookstore: "",
             createdAt: new Date().toISOString(),
         });
         setTitle("");
@@ -837,17 +903,37 @@ export default function App() {
         await updateDoc(doc(db, "books", book.id), { aua: !book.aua });
     }
     async function toggleStarred(book) {
-        const next = !isStarred(book);
+        if (isSuperstarred(book)) {
+            await updateDoc(doc(db, "books", book.id), {
+                starred: false,
+                top3: false,
+                superstar: false,
+            });
+            return;
+        }
+
+        if (isStarred(book)) {
+            await updateDoc(doc(db, "books", book.id), {
+                starred: true,
+                top3: true,
+                superstar: true,
+            });
+            return;
+        }
+
         await updateDoc(doc(db, "books", book.id), {
-            starred: next,
-            top3: next,
+            starred: true,
+            top3: true,
+            superstar: false,
         });
     }
+
     async function toggleBookstore(book) {
         if (book.inBookstore) {
             await updateDoc(doc(db, "books", book.id), {
                 inBookstore: false,
                 bookstorePrice: null,
+                bookstore: "",
             });
             return;
         }
@@ -855,9 +941,18 @@ export default function App() {
         if (input === null) return;
         const price = parseFloat(input);
         if (isNaN(price) || price < 0) return;
+
+        const storeInput = prompt(
+            "Store color? blue / orange / brown",
+            book.bookstore || "blue",
+        );
+        const bookstore = normalizeBookstore(storeInput);
+        if (!bookstore) return;
+
         await updateDoc(doc(db, "books", book.id), {
             inBookstore: true,
             bookstorePrice: price,
+            bookstore,
         });
     }
     async function unstarAll() {
@@ -873,6 +968,7 @@ export default function App() {
             batch.update(doc(db, "books", b.id), {
                 starred: false,
                 top3: false,
+                superstar: false,
             }),
         );
         await batch.commit();
@@ -886,9 +982,9 @@ export default function App() {
     const unavailableCount = totalBooks - availableCount;
 
     function getPreviewBooks(filteredBooks) {
-        const reading = filteredBooks.filter((b) => b.reading);
-        const starred = filteredBooks.filter((b) => isStarred(b) && !b.reading);
-        const preview = [...reading, ...starred].slice(0, 4);
+        const preview = [...filteredBooks]
+            .sort(sortBooksForDisplay)
+            .slice(0, 4);
         if (preview.length < 4) {
             const previewIds = new Set(preview.map((b) => b.id));
             const rest = filteredBooks.filter((b) => !previewIds.has(b.id));
