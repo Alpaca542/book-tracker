@@ -62,7 +62,7 @@ const cols = [
 ];
 
 function isStarred(book) {
-    return Boolean(book.starred ?? book.top3 ?? book.superstar ?? false);
+    return Boolean(book.starred ?? book.superstar ?? false);
 }
 
 function isSuperstarred(book) {
@@ -438,7 +438,7 @@ function BookCard({
                             className={`star-btn ${starred ? "active" : ""} ${superstarred ? "superstar-active" : ""}`}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (canEdit) toggleStarred(book);
+                                if (canEdit) toggleStarred(book, e.metaKey);
                             }}
                             disabled={!canEdit}
                             title={
@@ -902,11 +902,18 @@ export default function App() {
     async function toggleAua(book) {
         await updateDoc(doc(db, "books", book.id), { aua: !book.aua });
     }
-    async function toggleStarred(book) {
-        if (isSuperstarred(book)) {
+    async function toggleStarred(book, forceUnstar = false) {
+        if (forceUnstar) {
             await updateDoc(doc(db, "books", book.id), {
                 starred: false,
-                top3: false,
+                superstar: false,
+            });
+            return;
+        }
+
+        if (isSuperstarred(book)) {
+            await updateDoc(doc(db, "books", book.id), {
+                starred: true,
                 superstar: false,
             });
             return;
@@ -915,7 +922,6 @@ export default function App() {
         if (isStarred(book)) {
             await updateDoc(doc(db, "books", book.id), {
                 starred: true,
-                top3: true,
                 superstar: true,
             });
             return;
@@ -923,7 +929,6 @@ export default function App() {
 
         await updateDoc(doc(db, "books", book.id), {
             starred: true,
-            top3: true,
             superstar: false,
         });
     }
@@ -967,7 +972,6 @@ export default function App() {
         starred.forEach((b) =>
             batch.update(doc(db, "books", b.id), {
                 starred: false,
-                top3: false,
                 superstar: false,
             }),
         );
